@@ -1,0 +1,53 @@
+.harbor-container {
+    margin-top: 60px;
+}
+
+.harbor-body {
+    max-width: 450px;
+    padding: 15px;
+    margin: 0 auto 20px auto;
+}
+
+.copyright {
+    margin-top: 45px;
+    background: #ffffff;
+    font-size: 13px;
+    text-align: center;
+    color: #555555;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: dashed seashell 3px;
+    position: relative;
+    width: 100%;
+    bottom: 0;
+}
+.copyright span {
+    margin: 0 .5em;
+}
+.copyright a {
+    color: #555555;
+}
+
+h1 a {
+    color: #3c3c3c;
+}
+
+h1 a:hover {
+    color: #0a0005;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.harbor-padding {
+    padding: 10px 0;
+}
+
+.agree-pre {
+    padding: 10px;
+    font-size: 12px;
+    /*    text-indent: 2em;*/
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap; /*Mozilla,since1999*/
+    white-space: -o-pre-wrap; /*Opera7*/
+    word-wrap: break-word; /*InternetExplorer5.5+*/
+}
