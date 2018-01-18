@@ -37,14 +37,14 @@
                        maxlength="10" v-model="studentNumber" class="form-control">
                 <label for="password">密码：</label>
                 <input type="password" id="password" title="密码"
-                       placeholder="默认密码就是学号" v-model="password" class="form-control">
+                       placeholder="密码和学号一样的话，留空即可" v-model="password" class="form-control">
             </div>
             <div class="text-danger harbor-padding">
-                <span>输入不正确</span>
+                <span v-html="errmsg"></span>
             </div>
             <div class="checkbox">
                 <label>
-                    <input type="checkbox" name="agreement"> 同意软件使用条款
+                    <input type="checkbox" name="agreement" v-model="checked"> 同意软件使用条款
                     <a href="agreement.html" target="_blank">免责条款</a>
                 </label>
             </div>
@@ -57,8 +57,8 @@
                 <th>成绩</th>
             </tr>
             <tr v-for="grade in grades">
-                <td>{{ grade.kcmc }}</td>
-                <td>{{ grade.cj }}</td>
+                <td><span v-html="grade.kcmc"></span></td>
+                <td><span v-html="grade.cj"></span></td>
             </tr>
         </table>
     </div>
@@ -79,7 +79,8 @@
                             </a>
                         </span> <br/>
                         <span>
-                            此软件仅能以学习交流为目的运行，如果给学校的利益带来任何形式的损失，原作者不负任何责任
+                            此软件仅能以学习交流为目的运行，如果给学校的利益带来任何形式的损失，原作者不负任何责任<br/>
+                            此软件为纯前端代码，不会以任何技术可能的手段记录您的个人信息！！！
                         </span>
                     </div>
                 </div>
@@ -94,29 +95,31 @@
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="js/md5.min.js"></script>
 <script>
-    const app = new Vue({
-        el: '#appShowGrades',
-        data: {
-            grades: []
-        },
-        created() {
-            fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=537f4ac9aded4c2e8fd8b2b8a827bbac')
-                .then(response => response.json())
-                .then(json => {
-                    this.grades = json.data[4].items;
-                    console.log(json.data)
-                })
-        }
-    });
 
-    new Vue({
+    const appLogin = new Vue({
         el: '#appLogin',
         data: {
             studentNumber: '',
-            password: ''
+            password: '',
+            errmsg: '',
+            checked: false
         },
         methods: {
             login() {
+                appLogin.errmsg = '';
+
+                if (appLogin.studentNumber.length !== 10) {
+                    appLogin.errmsg = '学号长度有误';
+                    return
+                }
+                if (appLogin.password.trim() === '') {
+                    appLogin.password = appLogin.studentNumber;
+                    return
+                }
+                if (!appLogin.checked) {
+                    appLogin.errmsg = '必须同意条款才能继续';
+                    return
+                }
                 const data = JSON.stringify({
                     u: this.studentNumber,
                     tec: 'android:7.1.2',
@@ -125,31 +128,50 @@
                     ver: "214",
                     uuid: ''
                 });
-                console.log(data.toString());
                 axios.post(
-                    'http://ydjw.nwu.edu.cn/university-facade/Murp/Login',
-                    {
-                        u: this.studentNumber,
-                        tec: 'android:7.1.2',
-                        type: '110',
-                        p: md5(this.password + 'murp'),
-                        ver: "214",
-                        uuid: ''
-                    },
+                    'http://gradeapi.tellyouwhat.cn/university-facade/Murp/Login',
+                    data,
                     {
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Content-Type': 'application/json',
                         }
                     }
                 )
                     .then(function (response) {
-                        console.log(response);
+                        if (response.data.data == null) {
+                            appLogin.errmsg = '学号密码不匹配';
+                            return
+                        }
+                        const app = new Vue({
+                            el: '#appShowGrades',
+                            data: {
+                                grades: []
+                            },
+                            created() {
+                                fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
+                                    .then(response => response.json())
+                                    .then(json => {
+                                        for (let item in json.data) {
+                                            for (let i in json.data[item].items) {
+                                                this.grades.push(json.data[item].items[i])
+                                            }
+                                        }
+                                    })
+                            }
+                        });
                     })
                     .catch(function (error) {
                         console.log(error);
                     });
             }
-        }
+        },
+        watch: {
+            // 如果 `studentNumber` 发生改变，这个函数就会运行
+            studentNumber: function () {
+                this.password = this.studentNumber
+            }
+        },
+
     })
 </script>
 </body>
