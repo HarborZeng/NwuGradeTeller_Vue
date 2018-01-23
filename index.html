@@ -127,6 +127,27 @@
                     ver: "214",
                     uuid: ''
                 });
+
+                function searchGrades(response) {
+                    const app = new Vue({
+                        el: '#appShowGrades',
+                        data: {
+                            grades: []
+                        },
+                        created() {
+                            fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
+                                .then(response => response.json())
+                                .then(json => {
+                                    for (let item in json.data) {
+                                        for (let i in json.data[item].items) {
+                                            this.grades.push(json.data[item].items[i])
+                                        }
+                                    }
+                                })
+                        }
+                    });
+                }
+
                 axios.post(
                     'http://gradeapi.tellyouwhat.cn/university-facade/Murp/Login',
                     data,
@@ -141,26 +162,10 @@
                             appLogin.errmsg = '学号密码不匹配';
                             return
                         }
-                        const app = new Vue({
-                            el: '#appShowGrades',
-                            data: {
-                                grades: []
-                            },
-                            created() {
-                                fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
-                                    .then(response => response.json())
-                                    .then(json => {
-                                        for (let item in json.data) {
-                                            for (let i in json.data[item].items) {
-                                                this.grades.push(json.data[item].items[i])
-                                            }
-                                        }
-                                    })
-                            }
-                        });
+                        searchGrades(response);
                     })
                     .catch(function (error) {
-                        console.log(error);
+                        appLogin.errmsg = '现在还不能查询成绩: ' + error.toString();
                     });
             }
         },
