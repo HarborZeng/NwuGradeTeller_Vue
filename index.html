@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--suppress ALL -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -114,7 +115,6 @@
                 }
                 if (appLogin.password.trim() === '') {
                     appLogin.password = appLogin.studentNumber;
-                    return
                 }
                 if (!appLogin.checked) {
                     appLogin.errmsg = '必须同意条款才能继续';
