@@ -72,7 +72,9 @@
             </tr>
             <tr v-for="grade in grades">
                 <td><span v-html="grade.kcmc"></span></td>
-                <td><span v-html="grade.cj"></span></td>
+                <td v-if="grade.cj < 60" class="danger"><span v-html="grade.cj"></span></td>
+                <td v-else-if="grade.cj >= 85" class="success"><span v-html="grade.cj"></span></td>
+                <td v-else><span v-html="grade.cj"></span></td>
             </tr>
         </table>
     </div>
