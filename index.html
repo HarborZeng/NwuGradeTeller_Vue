@@ -119,7 +119,7 @@
         },
         methods: {
             login() {
-                appLogin.errmsg = '';
+                appLogin.errmsg = '正在查询。。。';
 
                 if (appLogin.studentNumber.length !== 10) {
                     appLogin.errmsg = '学号长度有误';
@@ -145,18 +145,22 @@
                     const app = new Vue({
                         el: '#appShowGrades',
                         data: {
-                            grades: []
+                            grades: [],
                         },
                         created() {
-                            fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
-                                .then(response => response.json())
-                                .then(json => {
-                                    for (let item in json.data) {
-                                        for (let i in json.data[item].items) {
-                                            this.grades.push(json.data[item].items[i])
+                            axios.get('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
+                                .then(response => {
+                                    if (response.data.state === 200) {
+                                        appLogin.errmsg = '';
+                                        this.grades = [];
+                                        for (let item in response.data.data) {
+                                            for (let i in response.data.data[item].items) {
+                                                this.grades.push(response.data.data[item].items[i])
+                                            }
                                         }
                                     }
                                 })
+                                .catch(error => console.log(error))
                         }
                     });
                 }
@@ -172,8 +176,11 @@
                             fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/StudyState?token=' + response.data.data.token)
                                 .then(response => response.json())
                                 .then(json => {
-                                    if (json.state === 200)
+                                    if (json.state === 200) {
+                                        appLogin.errmsg = '';
+                                        this.studyState = {};
                                         this.studyState = json.data
+                                    }
                                 })
                         }
                     })
