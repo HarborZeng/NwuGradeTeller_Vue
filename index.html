@@ -22,10 +22,10 @@
     </div>
 </nav>
 
-<div class="container harbor-container">
+<div class="container harbor-container" id="app">
     <div class="harbor-body">
         <div class="row">
-            <form id="appLogin" name="loginForm" class="col-md-6">
+            <form name="loginForm" class="col-md-6">
                 <div class="form-group">
                     <label for="student-number">学号：</label>
                     <input id="student-number" title="学号" placeholder="10位纯数字"
@@ -45,7 +45,7 @@
                 </div>
                 <button type="button" class="btn btn-primary btn-lg" @click="login()">查询</button>
             </form>
-            <div class="col-md-6" id="appStudyState">
+            <div class="col-md-6">
                 <h4>学习状态</h4>
                 <hr/>
                 <table class="table table-responsive table-bordered table-hover table-study">
@@ -65,7 +65,7 @@
                 </table>
             </div>
         </div>
-        <table class="table table-bordered table-hover table-width-controlled" id="appShowGrades">
+        <table class="table table-bordered table-hover table-width-controlled">
             <tr>
                 <th>科目</th>
                 <th>成绩</th>
@@ -111,35 +111,38 @@
 <script src="js/md5.min.js"></script>
 <script>
 
-    const appLogin = new Vue({
-        el: '#appLogin',
+    const app = new Vue({
+        el: '#app',
         data: {
-            //初始化appLogin里面的几个变量的值
+            //初始化app里面的几个变量的值
             studentNumber: '',
             password: '',
             errmsg: '',
-            checked: false
+            checked: false,
+            grades: [],
+            studyState: {}
         },
         methods: {
             //点击事件会调用此方法
             login() {
                 //将红色的信息显示成正在查询
-                appLogin.errmsg = '正在查询。。。';
+                app.errmsg = '正在查询。。。';
 
                 //判断学号长度
-                if (appLogin.studentNumber.length !== 10) {
-                    appLogin.errmsg = '学号长度有误';
+                if (app.studentNumber.length !== 10) {
+                    app.errmsg = '学号长度有误';
                     return
                 }
                 //如果密码未填，自动填充和学号一样的密码
-                if (appLogin.password.trim() === '') {
-                    appLogin.password = appLogin.studentNumber;
+                if (app.password.trim() === '') {
+                    app.password = app.studentNumber;
                 }
                 //必须同意条款才能继续
-                if (!appLogin.checked) {
-                    appLogin.errmsg = '必须同意条款才能继续';
+                if (!app.checked) {
+                    app.errmsg = '必须同意条款才能继续';
                     return
                 }
+
                 //准备登录所需post的数据
                 const data = JSON.stringify({
                     u: this.studentNumber,
@@ -152,59 +155,41 @@
 
                 //查询成绩的函数，会在后面登录成功后调用
                 function searchGrades(response) {
-                    const app = new Vue({
-                        el: '#appShowGrades',
-                        //初始化成绩数组
-                        data: {
-                            grades: [],
-                        },
-                        created() {
-                            axios.get('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
-                                .then(response => {
-                                    //与服务器通信没有错误
-                                    if (response.data.state === 200) {
-                                        //数据返回没有异常
-                                        //清空红色的错误信息
-                                        appLogin.errmsg = '';
-                                        //清空成绩数组
-                                        this.grades = [];
-                                        //循环把所有成绩装进数组
-                                        for (let item in response.data.data) {
-                                            for (let i in response.data.data[item].items) {
-                                                this.grades.push(response.data.data[item].items[i])
-                                            }
-                                        }
+                    axios.get('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/MyGrades?token=' + response.data.data.token)
+                        .then(response => {
+                            //与服务器通信没有错误
+                            if (response.data.state === 200) {
+                                //数据返回没有异常
+                                //清空红色的错误信息
+                                app.errmsg = '';
+                                //清空现有成绩
+                                app.grades = [];
+                                //循环把所有成绩装进数组
+                                for (let item in response.data.data) {
+                                    for (let i in response.data.data[item].items) {
+                                        app.grades.push(response.data.data[item].items[i])
                                     }
-                                })
-                                .catch(error => console.log(error))
-                        }
-                    });
+                                }
+                            }
+                        })
+                        .catch(error => console.log(error))
                 }
 
                 //查询学习状态的函数，会在后面登录成功后调用
                 function searchStudyState(response) {
                     // http://ydjw.nwu.edu.cn/university-facade/MyUniversity/StudyState?token=
-                    const appStudyState = new Vue({
-                        el: '#appStudyState',
-                        //初始化学习状态对象
-                        data: {
-                            studyState: {}
-                        },
-                        created() {
-                            fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/StudyState?token=' + response.data.data.token)
-                                .then(response => response.json())
-                                .then(json => {
-                                    //与服务器通信成功
-                                    if (json.state === 200) {
-                                        //服务器返回数据没有异常
-                                        //清空红色的错误信息
-                                        appLogin.errmsg = '';
-                                        //把查出来的学习状态json对象赋给学习状态studyState
-                                        this.studyState = json.data
-                                    }
-                                })
-                        }
-                    })
+                    fetch('http://ydjw.nwu.edu.cn/university-facade/MyUniversity/StudyState?token=' + response.data.data.token)
+                        .then(response => response.json())
+                        .then(json => {
+                            //与服务器通信成功
+                            if (json.state === 200) {
+                                //服务器返回数据没有异常
+                                //清空红色的错误信息
+                                app.errmsg = '';
+                                //把查出来的学习状态json对象赋给学习状态studyState
+                                app.studyState = json.data
+                            }
+                        })
                 }
 
                 //发起登录的请求
@@ -219,7 +204,7 @@
                 )
                     .then(function (response) {
                         if (response.data.data == null) {
-                            appLogin.errmsg = '学号密码不匹配';
+                            app.errmsg = '学号密码不匹配';
                             return
                         }
                         //调用那两个函数
@@ -227,7 +212,7 @@
                         searchGrades(response);
                     })
                     .catch(function (error) {
-                        appLogin.errmsg = '现在还不能查询成绩: ' + error.toString();
+                        app.errmsg = '现在还不能查询成绩: ' + error.toString();
                     });
             }
         },
