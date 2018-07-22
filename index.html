@@ -8,22 +8,23 @@
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body onloadeddata="loadFinished()">
 <nav class="navbar navbar-default navbar-fixed-top ">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="index.html">西北大学第三方成绩查询</a>
-        </div>
-        <div class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-                <li><a href="index.html">历年成绩</a></li>
-            </ul>
+            <a class="navbar-brand" href="index.html">西大成绩查询 - m西北大学网页版（非官方）</a>
         </div>
     </div>
 </nav>
 
 <div class="container harbor-container" id="app">
     <div class="harbor-body">
+        <div class="alert alert-warning">
+            <a href="#" class="close" data-dismiss="alert">
+                &times;
+            </a>
+            <strong>此网页表现和m西北大学软件一致，并不能提前查成绩，请悉知</strong>
+        </div>
         <div class="row">
             <form name="loginForm" class="col-md-6">
                 <div class="form-group">
@@ -34,9 +35,33 @@
                     <input type="password" id="password" title="密码"
                            placeholder="密码和学号一样的话，留空即可" v-model="password" class="form-control">
                 </div>
-                <div class="text-danger harbor-padding">
-                    <span v-html="errmsg"></span>
-                </div>
+                <!-- 模态框（Modal） -->
+                <div class="modal fade" id="errMsgModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal"
+                                        aria-hidden="true">×
+                                </button>
+                                <h4 class="modal-title" id="myModalLabel">
+                                    啊哦~
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <span v-html="errmsg"></span>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default"
+                                        data-dismiss="modal">我知道了
+                                </button>
+                                <!--<button type="button" class="btn btn-primary">
+                                    提交更改
+                                </button>-->
+                            </div>
+                        </div><!-- /.modal-content -->
+                    </div><!-- /.modal-dialog -->
+                </div><!-- /.modal -->
                 <div class="checkbox">
                     <label>
                         <input type="checkbox" name="agreement" v-model="checked"> 同意软件使用条款
@@ -69,6 +94,9 @@
             <tr>
                 <th>科目</th>
                 <th>成绩</th>
+            </tr>
+            <tr>
+                <td v-if="grades.length == 0" colspan="2"><span>无</span></td>
             </tr>
             <tr v-for="grade in grades">
                 <td><span v-html="grade.kcmc"></span></td>
@@ -109,7 +137,15 @@
 <script src="https://cdn.jsdelivr.net/npm/vue"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="js/md5.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script>
+    function loadFinished() {
+        $(".alert").alert()
+    }
+
+    function closeAlert() {
+        $(".alert").alert('close')
+    }
 
     const app = new Vue({
         el: '#app',
@@ -131,6 +167,7 @@
                 //判断学号长度
                 if (app.studentNumber.length !== 10) {
                     app.errmsg = '学号长度有误';
+                    $('#errMsgModal').modal('show');
                     return
                 }
                 //如果密码未填，自动填充和学号一样的密码
@@ -140,6 +177,7 @@
                 //必须同意条款才能继续
                 if (!app.checked) {
                     app.errmsg = '必须同意条款才能继续';
+                    $('#errMsgModal').modal('show');
                     return
                 }
 
@@ -160,8 +198,6 @@
                             //与服务器通信没有错误
                             if (response.data.state === 200) {
                                 //数据返回没有异常
-                                //清空红色的错误信息
-                                app.errmsg = '';
                                 //清空现有成绩
                                 app.grades = [];
                                 //循环把所有成绩装进数组
@@ -170,9 +206,16 @@
                                         app.grades.push(response.data.data[item].items[i])
                                     }
                                 }
+                            } else {
+                                app.errmsg = response.data.message;
+                                $('#errMsgModal').modal('show');
                             }
                         })
-                        .catch(error => console.log(error))
+                        .catch(error => {
+                            console.log(error);
+                            app.errmsg = error.toString();
+                            $('#errMsgModal').modal('show');
+                        })
                 }
 
                 //查询学习状态的函数，会在后面登录成功后调用
@@ -184,10 +227,11 @@
                             //与服务器通信成功
                             if (json.state === 200) {
                                 //服务器返回数据没有异常
-                                //清空红色的错误信息
-                                app.errmsg = '';
                                 //把查出来的学习状态json对象赋给学习状态studyState
                                 app.studyState = json.data
+                            } else {
+                                app.errmsg = json.message;
+                                $('#errMsgModal').modal('show');
                             }
                         })
                 }
@@ -202,18 +246,21 @@
                         }
                     }
                 )
-                    .then(function (response) {
-                        if (response.data.data == null) {
-                            app.errmsg = '学号密码不匹配';
+                    .then(response => {
+                        if (response.status != 200 || response.data.state != 200) {
+                            app.errmsg = "登录出错";
+                            $('#errMsgModal').modal('show');
                             return
                         }
                         //调用那两个函数
                         searchStudyState(response);
                         searchGrades(response);
                     })
-                    .catch(function (error) {
-                        app.errmsg = '现在还不能查询成绩: ' + error.toString();
+                    .catch(error => {
+                        app.errmsg = '出错: ' + error.toString();
+                        $('#errMsgModal').modal('show');
                     });
+
             }
         },
         watch: {
