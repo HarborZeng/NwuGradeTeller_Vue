@@ -248,7 +248,7 @@
                 )
                     .then(response => {
                         if (response.status != 200 || response.data.state != 200) {
-                            app.errmsg = "登录出错";
+                            app.errmsg = response.data.message;
                             $('#errMsgModal').modal('show');
                             return
                         }
